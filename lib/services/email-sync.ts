@@ -3,6 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { isBillCandidate } from "./email-filter";
 import { parseWithRules } from "./parser-rules";
 import { parseWithLLM } from "./parser-llm";
+import type { ParseResult } from "./parser-rules";
+import type { LLMParseResult } from "./parser-llm";
 import {
 	detectPriceIncrease,
 	detectUnexpectedCharge,
@@ -79,7 +81,7 @@ export async function syncEmailAccount(
 			const body = extractTextBody(detail.data.payload) ?? "";
 
 			// Try rule-based parser first
-			let parseResult = parseWithRules(senderEmail, subject, body);
+			let parseResult: ParseResult | LLMParseResult | null = parseWithRules(senderEmail, subject, body);
 
 			// Fall back to LLM if rules didn't match
 			if (!parseResult && llmCallCount < 50) {
@@ -267,7 +269,7 @@ async function insertAlert(
 }
 
 function extractTextBody(
-	payload: { mimeType?: string; body?: { data?: string }; parts?: unknown[] } | undefined,
+	payload: { mimeType?: string | null; body?: { data?: string | null } | null; parts?: unknown[] | null } | undefined,
 ): string | null {
 	if (!payload) return null;
 
