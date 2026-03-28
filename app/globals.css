@@ -1,26 +1,37 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+	--pw-bg: #09090f;
+	--pw-surface: #16161f;
+	--pw-border: rgba(255, 255, 255, 0.06);
+	--pw-accent: #5e6ad2;
+	--pw-text: #e4e4e7;
+	--pw-text-muted: #71717a;
+	--pw-red: #ef4444;
+	--pw-amber: #f59e0b;
+	--pw-green: #22c55e;
+	--pw-blue: #3b82f6;
+	--pw-purple: #a855f7;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+	--color-background: var(--pw-bg);
+	--color-foreground: var(--pw-text);
+	--color-surface: var(--pw-surface);
+	--color-border: var(--pw-border);
+	--color-accent: var(--pw-accent);
+	--color-muted: var(--pw-text-muted);
+	--color-urgent: var(--pw-red);
+	--color-warning: var(--pw-amber);
+	--color-success: var(--pw-green);
+	--color-info: var(--pw-blue);
+	--color-new: var(--pw-purple);
+	--font-sans: var(--font-inter);
+	--font-mono: var(--font-jetbrains);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+	background: var(--pw-bg);
+	color: var(--pw-text);
+	font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
