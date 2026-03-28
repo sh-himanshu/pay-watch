@@ -815,9 +815,9 @@ export default function LandingPage() {
 				<div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 sm:flex-row">
 					<div className="text-xs text-muted">Built by Himan. Powered by Next.js, Supabase, and AI.</div>
 					<div className="flex gap-6 text-xs text-muted">
-						<a href="#" className="hover:text-foreground">Privacy</a>
-						<a href="#" className="hover:text-foreground">Terms</a>
-						<a href="#" className="hover:text-foreground">GitHub</a>
+						<Link href="/privacy" className="hover:text-foreground">Privacy</Link>
+						<Link href="/terms" className="hover:text-foreground">Terms</Link>
+						<a href="https://github.com/sh-himanshu/pay-watch" className="hover:text-foreground" target="_blank" rel="noopener noreferrer">GitHub</a>
 					</div>
 				</div>
 			</footer>
