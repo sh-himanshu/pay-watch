@@ -2,6 +2,7 @@
   "enabledPlugins": {
     "superpowers@superpowers-marketplace": true,
     "ui-ux-pro-max-skill": true,
-    "claude-mem@thedotmack": true
+    "claude-mem@thedotmack": true,
+    "cloudflare@cloudflare": true
   }
 }
