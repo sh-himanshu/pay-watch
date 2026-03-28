@@ -1,37 +1,100 @@
 @import "tailwindcss";
 
-:root {
-	--pw-bg: #09090f;
-	--pw-surface: #16161f;
-	--pw-border: rgba(255, 255, 255, 0.06);
-	--pw-accent: #5e6ad2;
-	--pw-text: #e4e4e7;
-	--pw-text-muted: #71717a;
-	--pw-red: #ef4444;
-	--pw-amber: #f59e0b;
-	--pw-green: #22c55e;
-	--pw-blue: #3b82f6;
-	--pw-purple: #a855f7;
-}
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
 	--color-background: var(--pw-bg);
-	--color-foreground: var(--pw-text);
+	--color-foreground: var(--pw-fg);
 	--color-surface: var(--pw-surface);
+	--color-surface-secondary: var(--pw-surface-2);
 	--color-border: var(--pw-border);
 	--color-accent: var(--pw-accent);
-	--color-muted: var(--pw-text-muted);
-	--color-urgent: var(--pw-red);
-	--color-warning: var(--pw-amber);
-	--color-success: var(--pw-green);
-	--color-info: var(--pw-blue);
-	--color-new: var(--pw-purple);
+	--color-accent-light: var(--pw-accent-light);
+	--color-muted: var(--pw-muted);
+	--color-urgent: var(--pw-urgent);
+	--color-urgent-light: var(--pw-urgent-light);
+	--color-warning: var(--pw-warning);
+	--color-warning-light: var(--pw-warning-light);
+	--color-success: var(--pw-success);
+	--color-success-light: var(--pw-success-light);
+	--color-info: var(--pw-info);
+	--color-info-light: var(--pw-info-light);
+	--color-new: var(--pw-new);
+	--color-new-light: var(--pw-new-light);
 	--font-sans: var(--font-inter);
 	--font-mono: var(--font-jetbrains);
 }
 
+:root {
+	--pw-bg: #f9fafb;
+	--pw-fg: #111827;
+	--pw-surface: #ffffff;
+	--pw-surface-2: #f3f4f6;
+	--pw-border: #e5e7eb;
+	--pw-accent: #2563eb;
+	--pw-accent-light: #dbeafe;
+	--pw-muted: #6b7280;
+	--pw-urgent: #dc2626;
+	--pw-urgent-light: #fef2f2;
+	--pw-warning: #d97706;
+	--pw-warning-light: #fffbeb;
+	--pw-success: #059669;
+	--pw-success-light: #ecfdf5;
+	--pw-info: #2563eb;
+	--pw-info-light: #eff6ff;
+	--pw-new: #7c3aed;
+	--pw-new-light: #f5f3ff;
+}
+
+.dark {
+	--pw-bg: #0a0a0f;
+	--pw-fg: #e4e4e7;
+	--pw-surface: #141419;
+	--pw-surface-2: #1c1c24;
+	--pw-border: #27272a;
+	--pw-accent: #6366f1;
+	--pw-accent-light: rgba(99, 102, 241, 0.12);
+	--pw-muted: #a1a1aa;
+	--pw-urgent: #ef4444;
+	--pw-urgent-light: rgba(239, 68, 68, 0.12);
+	--pw-warning: #f59e0b;
+	--pw-warning-light: rgba(245, 158, 11, 0.12);
+	--pw-success: #22c55e;
+	--pw-success-light: rgba(34, 197, 94, 0.12);
+	--pw-info: #3b82f6;
+	--pw-info-light: rgba(59, 130, 246, 0.12);
+	--pw-new: #a855f7;
+	--pw-new-light: rgba(168, 85, 247, 0.12);
+}
+
 body {
 	background: var(--pw-bg);
-	color: var(--pw-text);
+	color: var(--pw-fg);
 	font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* How It Works - step pulse animation */
+.step-pulse-ring {
+	animation: step-pulse 2.5s ease-out infinite;
+}
+
+@keyframes step-pulse {
+	0% {
+		transform: scale(1);
+		opacity: 0.4;
+	}
+	70% {
+		transform: scale(1.35);
+		opacity: 0;
+	}
+	100% {
+		transform: scale(1.35);
+		opacity: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.step-pulse-ring {
+		animation: none;
+	}
 }

@@ -57,12 +57,18 @@ export default async function DashboardPage() {
 		0,
 	);
 
+	const firstName = (
+		user?.user_metadata?.full_name?.split(" ")[0] ?? user?.email?.split("@")[0] ?? "there"
+	);
+
 	return (
 		<div className="space-y-6 p-6 lg:p-8">
 			<div>
-				<h1 className="text-2xl font-bold">Dashboard</h1>
-				<p className="text-sm text-muted">
-					Welcome back, {user?.user_metadata?.full_name ?? user?.email}
+				<h1 className="text-2xl font-semibold">
+					Welcome back, {firstName}
+				</h1>
+				<p className="mt-1 text-sm text-muted">
+					Here's an overview of your bills and alerts.
 				</p>
 			</div>
 

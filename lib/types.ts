@@ -1,8 +1,11 @@
+export type Country = "US" | "IN";
+
 export type User = {
 	id: string;
 	email: string;
 	display_name: string;
 	avatar_url: string | null;
+	country: Country;
 	created_at: string;
 	updated_at: string;
 };
