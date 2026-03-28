@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendPushNotification } from "@/lib/services/push";
 
 export async function GET(request: Request) {
 	const authHeader = request.headers.get("authorization");
@@ -32,12 +33,32 @@ export async function GET(request: Request) {
 
 		if (!bills) continue;
 
-		// Update status to due_soon
+		// Update status to due_soon and send push
 		for (const bill of bills) {
 			await supabase
 				.from("bills")
 				.update({ status: "due_soon" })
 				.eq("id", bill.id);
+
+			// Send push notification for due reminders
+			const { data: notifPrefs } = await supabase
+				.from("notification_preferences")
+				.select("push_enabled, push_subscription")
+				.eq("user_id", pref.user_id)
+				.single();
+
+			if (notifPrefs?.push_enabled && notifPrefs.push_subscription) {
+				const billerName = (bill as Record<string, unknown> & { billers: { name: string } }).billers?.name ?? "Unknown";
+				await sendPushNotification(
+					notifPrefs.push_subscription as never,
+					{
+						title: `${billerName} — $${Number(bill.amount).toFixed(2)} due in ${pref.reminder_days_before} days`,
+						body: `Due date: ${bill.due_date}`,
+						url: "/dashboard/bills",
+					},
+				);
+			}
+
 			reminderCount++;
 		}
 	}

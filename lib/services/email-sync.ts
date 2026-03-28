@@ -11,6 +11,7 @@ import {
 	detectNewBiller,
 	computeRollingAverage,
 } from "./fee-detection";
+import { sendPushNotification } from "./push";
 import type { EmailAccount } from "@/lib/types";
 
 type SyncResult = {
@@ -24,6 +25,12 @@ export async function syncEmailAccount(
 	account: EmailAccount,
 ): Promise<SyncResult> {
 	const result: SyncResult = { billsCreated: 0, alertsCreated: 0, errors: [] };
+
+	// Refresh token if expired
+	account = await refreshTokenIfNeeded(supabase, account);
+	if (account.sync_status === "error") {
+		return { billsCreated: 0, alertsCreated: 0, errors: ["Token refresh failed"] };
+	}
 
 	const oauth2Client = new google.auth.OAuth2();
 	oauth2Client.setCredentials({
@@ -42,11 +49,13 @@ export async function syncEmailAccount(
 
 	let messages: { id: string }[] = [];
 	try {
-		const listResponse = await gmail.users.messages.list({
-			userId: "me",
-			q: `after:${afterTimestamp}`,
-			maxResults: 100,
-		});
+		const listResponse = await withRetry(() =>
+			gmail.users.messages.list({
+				userId: "me",
+				q: `after:${afterTimestamp}`,
+				maxResults: 100,
+			}),
+		);
 		messages = (listResponse.data.messages ?? []) as { id: string }[];
 	} catch (error) {
 		result.errors.push(`Failed to list messages: ${error}`);
@@ -266,6 +275,47 @@ async function insertAlert(
 		description: alert.description,
 		metadata: alert.metadata,
 	});
+
+	// Send push for urgent alerts
+	if (alert.severity === "urgent") {
+		const { data: prefs } = await supabase
+			.from("notification_preferences")
+			.select("push_enabled, push_subscription, quiet_hours_start, quiet_hours_end")
+			.eq("user_id", userId)
+			.single();
+
+		if (prefs?.push_enabled && prefs.push_subscription) {
+			if (!isQuietHours(prefs.quiet_hours_start, prefs.quiet_hours_end)) {
+				await sendPushNotification(
+					prefs.push_subscription as never,
+					{
+						title: alert.title,
+						body: alert.description,
+						url: "/dashboard/alerts",
+					},
+				);
+			}
+		}
+	}
+}
+
+function isQuietHours(start: string | null, end: string | null): boolean {
+	if (!start || !end) return false;
+	const now = new Date();
+	const hours = now.getHours();
+	const minutes = now.getMinutes();
+	const currentMinutes = hours * 60 + minutes;
+
+	const [startH, startM] = start.split(":").map(Number);
+	const [endH, endM] = end.split(":").map(Number);
+	const startMinutes = startH * 60 + startM;
+	const endMinutes = endH * 60 + endM;
+
+	if (startMinutes <= endMinutes) {
+		return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+	}
+	// Overnight quiet hours (e.g., 22:00 - 08:00)
+	return currentMinutes >= startMinutes || currentMinutes < endMinutes;
 }
 
 function extractTextBody(
@@ -315,4 +365,74 @@ function computeBillStatus(dueDate: string): "upcoming" | "due_soon" | "overdue"
 	if (diffDays < 0) return "overdue";
 	if (diffDays <= 3) return "due_soon";
 	return "upcoming";
+}
+
+async function refreshTokenIfNeeded(
+	supabase: SupabaseClient,
+	account: EmailAccount,
+): Promise<EmailAccount> {
+	const expiresAt = new Date(account.token_expires_at);
+	if (expiresAt > new Date()) return account;
+
+	// Token expired — attempt refresh
+	const oauth2Client = new google.auth.OAuth2(
+		process.env.GOOGLE_CLIENT_ID,
+		process.env.GOOGLE_CLIENT_SECRET,
+	);
+	oauth2Client.setCredentials({ refresh_token: account.refresh_token });
+
+	try {
+		const { credentials } = await oauth2Client.refreshAccessToken();
+
+		if (credentials.access_token) {
+			await supabase
+				.from("email_accounts")
+				.update({
+					access_token: credentials.access_token,
+					token_expires_at: credentials.expiry_date
+						? new Date(credentials.expiry_date).toISOString()
+						: new Date(Date.now() + 3600 * 1000).toISOString(),
+					sync_status: "active",
+				})
+				.eq("id", account.id);
+
+			return {
+				...account,
+				access_token: credentials.access_token,
+				token_expires_at: credentials.expiry_date
+					? new Date(credentials.expiry_date).toISOString()
+					: new Date(Date.now() + 3600 * 1000).toISOString(),
+			};
+		}
+	} catch {
+		// Refresh failed — mark account as error
+		await supabase
+			.from("email_accounts")
+			.update({ sync_status: "error" })
+			.eq("id", account.id);
+	}
+
+	return { ...account, sync_status: "error" };
+}
+
+async function withRetry<T>(
+	fn: () => Promise<T>,
+	maxRetries = 3,
+): Promise<T> {
+	for (let attempt = 0; attempt <= maxRetries; attempt++) {
+		try {
+			return await fn();
+		} catch (error: unknown) {
+			const isRateLimit =
+				error instanceof Error &&
+				(error.message.includes("429") || error.message.includes("rate limit"));
+
+			if (!isRateLimit || attempt === maxRetries) throw error;
+
+			// Exponential backoff with jitter
+			const delay = Math.min(1000 * 2 ** attempt + Math.random() * 1000, 30000);
+			await new Promise((resolve) => setTimeout(resolve, delay));
+		}
+	}
+	throw new Error("Max retries exceeded");
 }
